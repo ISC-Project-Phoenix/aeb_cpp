@@ -18,7 +18,7 @@ private:
     float wheelbase;
     /// The collision box of the vehicle, defined by the top left point of the box relative to the center of the rear axel,
     /// and the bottom right point relative to the rear axel.
-    std::tuple<Point, Point> collision_box;
+    std::tuple<LineDrawing::Pointf, LineDrawing::Pointf> collision_box;
     /// Rear axel to range sensor transform
     KartPoint axel_to_range;
     /// The minimum allowed time to collision.
@@ -26,7 +26,7 @@ private:
 
     /// Rotates a point about another, by the angle in rad.
     [[nodiscard]] KartPoint
-    rotate_point_about(const KartPoint p, const KartPoint origin, const float angle) const noexcept {
+    rotate_point_about(const KartPoint &p, const KartPoint &origin, const float angle) const noexcept {
         auto [x1, y1] = p;
         auto [ox, oy] = origin;
 
@@ -71,7 +71,7 @@ public:
     /// Creates the oriented bounding box given the karts position and yaw in rad.
     ///
     /// This box may lie outside the grid partially or totally.
-    [[nodiscard]] std::array<Line, 4> create_obb(const KartPoint pos, const float yaw) const noexcept {
+    [[nodiscard]] std::array<LineDrawing::Linef, 4> create_obb(const KartPoint &pos, const float yaw) const noexcept {
         const auto n = grid.get_size();
 
         // Swap axis to make me sane
@@ -81,19 +81,19 @@ public:
         const auto [brx, bry] = br;
 
         // Define box lines
-        const auto tl_to_tr = std::tuple{
+        const auto tl_to_tr = LineDrawing::Linef{
                 rotate_point_about(KartPoint{pred_y + tly, pred_x + tlx}, pos, yaw).transform_to_gridf(n).raw(),
                 rotate_point_about(KartPoint{pred_y + bry, pred_x + tlx}, pos, yaw).transform_to_gridf(n).raw()
         };
-        const auto tr_to_br = std::tuple{
+        const auto tr_to_br = LineDrawing::Linef{
                 rotate_point_about(KartPoint{pred_y + bry, pred_x + tlx}, pos, yaw).transform_to_gridf(n).raw(),
                 rotate_point_about(KartPoint{pred_y + bry, pred_x + brx}, pos, yaw).transform_to_gridf(n).raw()
         };
-        const auto br_to_bl = std::tuple{
+        const auto br_to_bl = LineDrawing::Linef{
                 rotate_point_about(KartPoint{pred_y + bry, pred_x + brx}, pos, yaw).transform_to_gridf(n).raw(),
                 rotate_point_about(KartPoint{pred_y + tly, pred_x + brx}, pos, yaw).transform_to_gridf(n).raw()
         };
-        const auto bl_to_tl = std::tuple{
+        const auto bl_to_tl = LineDrawing::Linef{
                 rotate_point_about(KartPoint{pred_y + tly, pred_x + brx}, pos, yaw).transform_to_gridf(n).raw(),
                 rotate_point_about(KartPoint{pred_y + tly, pred_x + tlx}, pos, yaw).transform_to_gridf(n).raw()
         };
@@ -146,7 +146,7 @@ public:
     /// \param points optional points to add to the grid before running AEB
     /// \tparam Iter an iterator over KartPoints
     template<typename Iter>
-    std::tuple<bool, size_t> collision_check(const std::optional<const Iter &> points) const noexcept {
+    std::tuple<bool, size_t> collision_check(const std::optional<const Iter &> points) noexcept {
         if (points) {
             add_points(*points);
         }
@@ -163,9 +163,18 @@ public:
             auto obb = create_obb(pos, heading);
 
             // Actually collision check
-            //TODO polygon collide here
-
+            if (grid.polygon_collide(obb)) {
+                grid.reset();
+                return std::tuple{true, timestep};
+            }
         }
+
+        grid.reset();
+        std::tuple{false, 0};
+    }
+
+    void print_grid() {
+        grid.print();
     }
 
     /// Configures AEB.
@@ -180,7 +189,8 @@ public:
     /// - axel_to_sensor: The transform of the axel to the front range sensor, in the kart frame.
     /// - min_ttc: the minimum allowed time to collision.
     Aeb(float initial_velocity, float inital_steering, float wheelbase,
-        std::tuple<Point, Point> collision_box, const KartPoint &axel_to_range, float min_ttc) noexcept:
+        std::tuple<LineDrawing::Pointf, LineDrawing::Pointf> collision_box, const KartPoint &axel_to_range,
+        float min_ttc) noexcept:
             volocity(initial_velocity),
             steering_angle(
                     inital_steering),

@@ -1,12 +1,20 @@
 #include <vector>
 #include "aeb.hpp"
 
+using namespace LineDrawing;
+
 int main() {
-    Aeb<51> aeb{3, 0, 1.08, std::tuple{Point{1, 5}, Point{-1, 2}}, KartPoint{0.0, 1.3}, 2};
+    Aeb<51> aeb{3, 0, 1.08, std::tuple{Pointf{1, 5}, Pointf{-1, 2}}, KartPoint{0.0, 1.3}, 2};
+    Grid<41> g{};
 
-    std::vector points{KartPoint{1, 2}, KartPoint{3, 4}};
+    std::vector v{
+            Linef{std::tuple{5.0f, 10.0f}, std::tuple{10.0f, 10.0f}},
+            Linef{std::tuple{10.0f, 10.0f}, std::tuple{10.0f, 20.0f}},
+            Linef{std::tuple{10.0f, 20.0f}, std::tuple{5.0f, 20.0f}},
+            Linef{std::tuple{5.0f, 20.0f}, std::tuple{5.0f, 10.0f}},
+    };
 
-    aeb.add_points(points);
+    g.draw_polygon(v);
 
-    auto [pos, yaw] = aeb.predict_pos(1000);
+    g.print();
 }

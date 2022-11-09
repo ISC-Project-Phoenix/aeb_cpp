@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.23)
 project(aeb)
 set(CMAKE_CXX_STANDARD 17)
 
-add_library(aeb STATIC grid.hpp aeb.hpp)
+add_library(aeb STATIC grid.hpp aeb.hpp line_drawing.hpp)
 
 set_target_properties(aeb PROPERTIES LINKER_LANGUAGE CXX)
 

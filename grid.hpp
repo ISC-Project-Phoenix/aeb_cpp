@@ -1,27 +1,18 @@
+#pragma once
+
 /**
  * Deterministic occupancy grid and associated utilities
  */
 
-#pragma once
-
 #include <cstddef>
 #include <limits>
 #include <array>
-#include <exception>
 #include <cmath>
 #include <tuple>
 #include <optional>
-#include <ostream>
-
-struct Point {
-    float x;
-    float y;
-};
-
-struct Line {
-    Point p1;
-    Point p2;
-};
+#include <cstdio>
+#include <cstdint>
+#include "line_drawing.hpp"
 
 /// Converts degrees to rad
 constexpr float dtor(const float degree) {
@@ -61,7 +52,6 @@ struct GridPointf {
         }
     }
 
-    /// Gets this point as a tuple.
     [[nodiscard]] std::tuple<float, float> raw() const noexcept {
         return std::tuple<float, float>{row, col};
     }
@@ -117,6 +107,20 @@ enum class Cell {
     Occupied
 };
 
+namespace {
+    /// A row registration used in rasterisation.
+    struct RowReg {
+        size_t start;
+        std::optional<size_t> end;
+
+        explicit RowReg(size_t start) : start(start) {
+            end = std::nullopt;
+        }
+
+        explicit RowReg(size_t start, const std::optional<size_t> &anEnd) : start(start), end(anEnd) {}
+    };
+}
+
 /// An nxn occupancy grid.
 ///
 /// \tparam N the size of one size of the grid, must be odd and < f32::max.
@@ -150,14 +154,141 @@ struct Grid {
         data = std::array<std::array<Cell, N>, N>{};
     }
 
-    //TODO draw and check polygon
+    /// Checks if a filled polygon overlaps with any occupied space.
+    ///
+    /// - Lines must form a closed polygon, else this function will fail.
+    ///
+    /// - This function will not fault if a point falls off the grid.
+    ///
+    /// - Be aware that this function will use usize*N stack space.
+    template<typename Iter>
+    bool polygon_collide(const Iter &lines) {
+        bool collided = false;
+
+        // Check for filled cells
+        auto cb = [&collided](Cell &cell, size_t x, size_t y) mutable {
+            collided = cell == Cell::Occupied;
+        };
+
+        polygon_base(lines, cb);
+
+        return collided;
+    }
+
+    /// Draws (Rasterizes) a filled polygon onto the grid. Lines must form a polygon, else this
+    /// function will fail. This function will not fault if a point falls off the grid.
+    ///
+    /// Be aware that this function will use usize*N stack space.
+    template<typename Iter>
+    void draw_polygon(Iter &lines) {
+        auto draw = [](Cell &cell, size_t x, size_t y) {
+            cell = Cell::Occupied;
+        };
+
+        polygon_base(lines, draw);
+    }
 
     Cell &operator[](GridPoint idx) const noexcept {
         return data[idx.row][idx.col];
     }
 
-    friend std::ostream &operator<<(std::ostream &os, const Grid &grid) {
-        os << "data: " << grid.data;
-        return os;
+    /// Prints the grid
+    void print() {
+        auto m = 10.0f / (float) get_size();
+
+        // Print numbers
+        printf("     ");
+        for (size_t col_n = 0; col_n < N; col_n++) {
+            printf("%-4zu", col_n);
+        }
+        printf("\n");
+
+        // Print data
+        for (size_t i = 0; i < N; i++) {
+            printf("%-4zu[ ", i);
+            for (size_t j = 0; j < N; j++) {
+                auto cell = data[i][j];
+
+                if (cell == Cell::Occupied) {
+                    printf("# ");
+                } else {
+                    printf("  ");
+                }
+
+                if (j + 1 != N) {
+                    printf("| ");
+                }
+            }
+            printf("]%4zu %4.2fm\n", i, 10.0f - (m * (float) i));
+
+            // Add separating lines
+            printf("    ");
+            for (int r = 0; r < N; ++r) {
+                printf("----");
+            }
+            printf("\n");
+        }
+    }
+
+private:
+    /// Basis for raster methods. Cb is a lambda of (&Cell, x, y) -> void called on each cell.
+    template<typename Iter, typename Cb>
+    void polygon_base(Iter &lines, Cb visitor) {
+        // Array of the first and last points on each line. Row is index, col is in the reg
+        std::array<std::optional<RowReg>, N> ends{};
+
+        // Draw the lines, and record the ends of each row
+        for (LineDrawing::Linef &line: lines) {
+            for (LineDrawing::Point<int64_t> &p: LineDrawing::midpoint<float, int64_t>(line.p1, line.p2)) {
+                // Handle points OOB as negitive
+                auto x = (size_t) std::max(p.x, 0l);
+                auto y = (size_t) std::max(p.y, 0l);
+
+                // Register ends
+                if (ends[x].has_value()) {
+                    RowReg &reg = *ends[x];
+
+                    if (reg.start == y) {
+                        continue;
+                    }
+
+                    // If point is left-more than start, it is the starting point
+                    if (y < reg.start) {
+                        // Move old start to end if there is none (if some, then end will already be bigger)
+                        if (!reg.end.has_value()) {
+                            reg.end = reg.start;
+                        }
+                        reg.start = y;
+                    }
+
+                        // If there was no end, this point must be the biggest. If there is, then replace if new point is bigger
+                    else if (!reg.end.has_value() || *reg.end < y) {
+                        reg.end = y;
+                    }
+                } else if (x < N) {
+                    ends[x] = RowReg{y, std::nullopt};
+                }
+
+                // Bounds check, then visit
+                if (!(p.x < 0 || p.x >= N || p.y < 0 || p.y >= N)) {
+                    visitor(data[x][y], x, y);
+                }
+            }
+        }
+
+        // Now fill in the inside of the polygon, bounded by the ends
+        for (size_t x = 0; x < N; x++) {
+            if (auto reg = ends[x]; reg) {
+                // Ignore rows with only one cell filled
+                if (reg->end) {
+                    for (size_t y = reg->start; y < *reg->end; y++) {
+                        // Bounds check
+                        if (!(x >= N || y >= N)) {
+                            visitor(data[x][y], x, y);
+                        }
+                    }
+                }
+            }
+        }
     }
 };

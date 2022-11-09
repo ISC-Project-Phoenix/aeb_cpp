@@ -40,7 +40,6 @@ namespace LineDrawing {
     typedef Line<float> Linef;
     typedef Line<size_t> Linel;
 
-    template<typename T>
     class Octant {
         uint8_t value;
 
@@ -50,6 +49,7 @@ namespace LineDrawing {
         }
 
         /// Get the relevant octant from a start and end point.
+        template<typename T>
         explicit Octant(const Point<T> &start, const Point<T> &end) {
             value = 0;
             auto dx = end.x - start.x;
@@ -74,6 +74,7 @@ namespace LineDrawing {
         }
 
         /// Convert a point to its position in the octant.
+        template<typename T>
         [[nodiscard]] Point<T> to(const Point<T> &point) const noexcept {
             switch (value) {
                 case 0:
@@ -100,10 +101,12 @@ namespace LineDrawing {
                 case 7:
                     return Point{point.x, -point.y};
             }
+            assert("We cannot reach here!");
             return Point<T>{};
         }
 
         /// Convert a point from its position in the octant.
+        template<typename T>
         [[nodiscard]] Point<T> from(const Point<T> &point) const noexcept {
             switch (value) {
                 case 0:
@@ -131,6 +134,7 @@ namespace LineDrawing {
                     return Point{point.x, -point.y};
             }
             assert("We cannot reach here!");
+            return Point<T>{};
         }
     };
 
@@ -149,9 +153,11 @@ namespace LineDrawing {
             /// Marks if this iterator is complete.
             bool done{};
 
-            Octant<I> octant;
-            /// The last produced point.
+            Octant octant;
+            /// The WIP point
             Point<O> point;
+            /// The last produced point.
+            Point<O> out_point;
 
             // State variables
             I a;
@@ -161,9 +167,11 @@ namespace LineDrawing {
 
         private:
 
-            /// Increments the algorithm, storing the result in this->point.
+            /// Increments the algorithm, storing the result in this->out_point.
             void next() noexcept {
                 if (point.x <= end_x) {
+                    out_point = octant.from(point);
+
                     // Take an N step
                     if (k <= (I) 0.0) {
                         k += b;
@@ -200,14 +208,17 @@ namespace LineDrawing {
                 point = Point{(O) std::round(start_2.x), (O) std::round(start_2.y)};
                 k = a * (std::round(start_2.x) + 1) + b * (std::round(start_2.y) + (I) 0.5) + c;
                 end_x = (O) std::round(end_2.x);
+
+                // Prime the iterator with the first value.
+                next();
             }
 
             reference operator*() {
-                return point;
+                return out_point;
             }
 
             pointer operator->() {
-                return &point;
+                return &out_point;
             }
 
             MidpointIter<I, O> &operator++() {

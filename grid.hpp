@@ -167,7 +167,7 @@ struct Grid {
 
         // Check for filled cells
         auto cb = [&collided](Cell &cell, size_t x, size_t y) mutable {
-            collided = cell == Cell::Occupied;
+            collided |= cell == Cell::Occupied;
         };
 
         polygon_base(lines, cb);

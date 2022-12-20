@@ -128,7 +128,7 @@ namespace LineDrawing {
                     return Point{-point.y, -point.x};
 
                 case 6:
-                    return Point{-point.y, -point.x};
+                    return Point{point.y, -point.x};
 
                 case 7:
                     return Point{point.x, -point.y};

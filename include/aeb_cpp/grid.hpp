@@ -16,7 +16,7 @@
 
 /// Converts degrees to rad
 constexpr float dtor(const float degree) {
-    return (degree * (float) M_PI) / 180.0f;
+    return (degree * static_cast<float>(M_PI)) / 180.0f;
 }
 
 /// An index indo the grid, garrentied to be in bounds. We define a point on the grid to be the top left corner of the grid squares
@@ -24,6 +24,21 @@ constexpr float dtor(const float degree) {
 struct GridPoint {
     size_t row;
     size_t col;
+
+    bool operator==(const GridPoint &rhs) const {
+        return row == rhs.row &&
+               col == rhs.col;
+    }
+
+    bool operator!=(const GridPoint &rhs) const {
+        return !(rhs == *this);
+    }
+
+    /// Creates a gridpoint, without any checks. This will cause UB in other functions if OOB, so it is advised to
+    /// instead create GridPoints from GridPointfs.
+    static GridPoint from_unsafe(size_t row, size_t col) {
+        return GridPoint{row, col};
+    }
 
 private:
     GridPoint(size_t row, size_t col) : row(row), col(col) {}
@@ -38,6 +53,15 @@ private:
 struct GridPointf {
     float row;
     float col;
+
+    bool operator==(const GridPointf &rhs) const {
+        return row == rhs.row &&
+               col == rhs.col;
+    }
+
+    bool operator!=(const GridPointf &rhs) const {
+        return !(rhs == *this);
+    }
 
     GridPointf(float row, float col) : row(row), col(col) {}
 
@@ -64,6 +88,15 @@ struct KartPoint {
     float x;
     float y;
 
+    bool operator==(const KartPoint &rhs) const {
+        return x == rhs.x &&
+               y == rhs.y;
+    }
+
+    bool operator!=(const KartPoint &rhs) const {
+        return !(rhs == *this);
+    }
+
     explicit KartPoint(float x, float y) : x(x), y(y) {}
 
     /// Creates a point in kart frame from a polar coordinate in kart frame.
@@ -75,7 +108,7 @@ struct KartPoint {
         auto x = r * sinf(th);
         auto y = r * cosf(th);
 
-        return KartPoint{x, y};
+        return KartPoint{static_cast<float>(x), static_cast<float>(y)};
     }
 
     /// Transforms a point from the frame of the kart to the frame of the grid. This function will not
@@ -140,7 +173,7 @@ struct Grid {
     }
 
     /// Checks if a cell is occupied.
-    void is_occupied(const GridPoint idx) const noexcept {
+    [[nodiscard]] bool is_occupied(const GridPoint idx) const noexcept {
         return data[idx.row][idx.col] == Cell::Occupied;
     }
 
@@ -161,8 +194,8 @@ struct Grid {
     /// - This function will not fault if a point falls off the grid.
     ///
     /// - Be aware that this function will use usize*N stack space.
-    template<typename Iter>
-    bool polygon_collide(const Iter &lines) {
+    template<typename Iter1, typename Iter2>
+    bool polygon_collide(Iter1 &&lines_begin, Iter2 &&lines_end) {
         bool collided = false;
 
         // Check for filled cells
@@ -170,7 +203,7 @@ struct Grid {
             collided |= cell == Cell::Occupied;
         };
 
-        polygon_base(lines, cb);
+        polygon_base(lines_begin, lines_end, cb);
 
         return collided;
     }
@@ -179,13 +212,13 @@ struct Grid {
     /// function will fail. This function will not fault if a point falls off the grid.
     ///
     /// Be aware that this function will use usize*N stack space.
-    template<typename Iter>
-    void draw_polygon(Iter &lines) {
+    template<typename Iter1, typename Iter2>
+    void draw_polygon(Iter1 &&lines_begin, Iter2 &&lines_end) {
         auto draw = [](Cell &cell, size_t x, size_t y) {
             cell = Cell::Occupied;
         };
 
-        polygon_base(lines, draw);
+        polygon_base(lines_begin, lines_end, draw);
     }
 
     Cell &operator[](GridPoint idx) const noexcept {
@@ -230,22 +263,28 @@ struct Grid {
         }
     }
 
+    /// Accesses a row in the grid.
+    std::array<Cell, N> &operator[](const std::size_t row) {
+        return this->data[row];
+    }
+
 private:
     /// Basis for raster methods. Cb is a lambda of (&Cell, x, y) -> void called on each cell.
-    template<typename Iter, typename Cb>
-    void polygon_base(Iter &lines, Cb visitor) {
+    template<typename Iter1, typename Iter2, typename Cb>
+    void polygon_base(Iter1 &&lines_begin, Iter2 &&lines_end, Cb visitor) {
         // Array of the first and last points on each line. Row is index, col is in the reg
         std::array<std::optional<RowReg>, N> ends{};
 
         // Draw the lines, and record the ends of each row
-        for (LineDrawing::Linef &line: lines) {
+        for (; lines_begin != lines_end; lines_begin++) {
+            auto line = *lines_begin;
             for (LineDrawing::Point<int64_t> &p: LineDrawing::midpoint<float, int64_t>(line.p1, line.p2)) {
                 // Handle points OOB as negitive
-                auto x = (size_t) std::max(p.x, 0l);
-                auto y = (size_t) std::max(p.y, 0l);
+                auto x = static_cast<size_t>(std::max(p.x, 0l));
+                auto y = static_cast<size_t>(std::max(p.y, 0l));
 
                 // Register ends
-                if (ends[x].has_value()) {
+                if (x < ends.size() - 1 && ends[x].has_value()) {
                     RowReg &reg = *ends[x];
 
                     if (reg.start == y) {

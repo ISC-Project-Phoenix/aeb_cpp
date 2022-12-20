@@ -51,7 +51,7 @@ public:
 
         if (phi == 0.0) {
             const auto displacement = t * s;
-            return std::tuple(KartPoint{displacement - axel_x, displacement - axel_y}, 0.0);
+            return std::tuple(KartPoint{displacement - axel_x, 0 - axel_y}, 0.0);
         }
 
         // Forward kinematics equations integrated over time. Based on: https://www.xarg.org/book/kinematics/ackerman-steering/
@@ -67,6 +67,9 @@ public:
                 heading
         };
     }
+
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "ArgumentSelectionDefects"
 
     /// Creates the oriented bounding box given the karts position and yaw in rad.
     ///
@@ -101,6 +104,8 @@ public:
         return std::array{tl_to_tr, tr_to_br, br_to_bl, bl_to_tl};
     }
 
+#pragma clang diagnostic pop
+
     /// Updates the current velocity in m/s.
     void update_velocity(const float velocity) noexcept {
         this->velocity = volocity;
@@ -122,10 +127,11 @@ public:
     /// Adds points to the grid to be used during the next collision check.
     ///
     /// Points that are < 15cm from the data source will be filtered out.
-    /// \param points_iter An iterator over KartPoints.
-    template<class Iter>
-    void add_points(const Iter &points_iter) noexcept {
-        for (KartPoint p: points_iter) {
+    /// \param points_iter A begin end iterator pair over KartPoints.
+    template<class Iter1, typename Iter2>
+    void add_points(Iter1 &&points_iter_begin, Iter2 &&points_iter_end) noexcept {
+        for (; points_iter_begin != points_iter_end; points_iter_begin++) {
+            auto p = *points_iter_begin;
             // If point is less than 15cm from kart, filter out
             if (p.x < 0.15f) {
                 continue;
@@ -142,15 +148,7 @@ public:
     /// Predicts the future position of the kart given the currently configured params, at some time.
     ///
     /// Returns final (position, heading), where heading is in rad and negative if left.
-    ///
-    /// \param points optional points to add to the grid before running AEB
-    /// \tparam Iter an iterator over KartPoints
-    template<typename Iter>
-    std::tuple<bool, size_t> collision_check(const std::optional<const Iter &> points) noexcept {
-        if (points) {
-            add_points(*points);
-        }
-
+    std::tuple<bool, size_t> collision_check() noexcept {
         // Convert ttc to millis
         const size_t STEP_MS = 10;
         auto ttc = (size_t) (min_ttc * 1000.0f);
@@ -163,14 +161,14 @@ public:
             auto obb = create_obb(pos, heading);
 
             // Actually collision check
-            if (grid.polygon_collide(obb)) {
+            if (grid.polygon_collide(obb.begin(), obb.end())) {
                 grid.reset();
                 return std::tuple{true, timestep};
             }
         }
 
         grid.reset();
-        std::tuple{false, 0};
+        return std::tuple{false, 0};
     }
 
     void print_grid() {

@@ -69,10 +69,10 @@ struct GridPointf {
     [[nodiscard]] std::optional<GridPoint> into_gridpoint(const size_t grid_size) const noexcept {
         const auto [r, c] = *this;
 
-        if (r < 0.0 || c < 0.0 || r >= (float) grid_size || c >= (float) grid_size) {
+        if (r < 0.0 || c < 0.0 || r >= static_cast<float>(grid_size) || c >= static_cast<float>(grid_size)) {
             return std::nullopt;
         } else {
-            return GridPoint{(size_t) r, (size_t) c};
+            return GridPoint{static_cast<size_t>(r), static_cast<size_t>(c)};
         }
     }
 
@@ -117,13 +117,13 @@ struct KartPoint {
         const auto n = grid_size;
 
         // This is the grid scale
-        const auto m = 10.0f / (float) n;
+        const auto m = 10.0f / static_cast<float>(n);
 
         const auto [r, c] = *this;
 
         // Linear transform as defined in docs
-        const auto out_r = (float) n - (r / m);
-        const auto out_c = (((float) n - 1.0f) / 2.0f) + (c / m);
+        const auto out_r = static_cast<float>(n) - (r / m);
+        const auto out_c = ((static_cast<float>(n) - 1.0f) / 2.0f) + (c / m);
 
         return GridPointf{out_r, out_c};
     }
@@ -208,10 +208,13 @@ struct Grid {
         return collided;
     }
 
-    /// Draws (Rasterizes) a filled polygon onto the grid. Lines must form a polygon, else this
-    /// function will fail. This function will not fault if a point falls off the grid.
+    /// Draws (Rasterizes) a filled polygon onto the grid.
     ///
-    /// Be aware that this function will use usize*N stack space.
+    /// - Lines must form a closed polygon, else this function will fail.
+    ///
+    /// - This function will not fault if a point falls off the grid.
+    ///
+    /// - Be aware that this function will use usize*N stack space.
     template<typename Iter1, typename Iter2>
     void draw_polygon(Iter1 &&lines_begin, Iter2 &&lines_end) {
         auto draw = [](Cell &cell, size_t x, size_t y) {
@@ -279,12 +282,12 @@ private:
         for (; lines_begin != lines_end; lines_begin++) {
             auto line = *lines_begin;
             for (LineDrawing::Point<int64_t> &p: LineDrawing::midpoint<float, int64_t>(line.p1, line.p2)) {
-                // Handle points OOB as negitive
+                // Handle points OOB as negative
                 auto x = static_cast<size_t>(std::max(p.x, 0l));
                 auto y = static_cast<size_t>(std::max(p.y, 0l));
 
                 // Register ends
-                if (x < ends.size() - 1 && ends[x].has_value()) {
+                if (x < N && ends[x].has_value()) {
                     RowReg &reg = *ends[x];
 
                     if (reg.start == y) {

@@ -17,7 +17,7 @@ TEST(GridTests, TransformPointWorks) {
     EXPECT_FALSE(k4.has_value());
 }
 
-TEST(Gridtests, KartPointPolarWorks) {
+TEST(GridTests, KartPointPolarWorks) {
     auto stright = KartPoint::from_polar(10, 90);
     EXPECT_NEAR(10, stright.x, 0.001);
     EXPECT_NEAR(0, stright.y, 0.001);

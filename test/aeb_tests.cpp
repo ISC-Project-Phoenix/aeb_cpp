@@ -11,9 +11,8 @@ TEST(AebTests, PredictionWorks) {
     EXPECT_NEAR(pos.x, 5 - 3.1, 0.0001);
     EXPECT_EQ(yaw, 0);
 
-    //TODO create more tests off IRL data
+    //TODO create more tests off IRL data, particularly with turning
 }
-
 
 TEST(AebTests, FullAebWroks) {
     auto aeb = Aeb<411>{3, 0, 1.08, std::tuple{Pointf{-0.675, 1.43}, Pointf{0.675, -0.59}}, KartPoint{1.43, 0}, 10};

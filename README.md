@@ -5,7 +5,7 @@ This library is a C++ implementation of the automatic emergency braking algorith
 The code in this repo utilises the STL, however it goes out of its way to avoid allocations. It should be usable in embedded contexts, so long as
 an implementation of the STL is available.
 
-For algorithm and system integration details, please see the [AEB design document](https://github.com/ISC-Project-Phoenix/design/blob/main/software/AEB.md).
+For algorithm and system integration details, please see the [AEB design document](https://github.com/ISC-Project-Phoenix/design/blob/main/software/embed/AEB.md).
 
 # Example
 ```c++

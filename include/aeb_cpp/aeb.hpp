@@ -132,7 +132,7 @@ public:
     }
 
     /// Gets the currently configured timestep.
-    [[nodiscard]] size_t get_timestep() const {
+    [[nodiscard]] size_t get_timestep() const noexcept {
         return timestep;
     }
 
@@ -141,22 +141,22 @@ public:
     /// will significantly increase the complexity of collision checking, so change with care.
     ///
     /// Values of 100-500 are reasonable, defaults to 500.
-    void update_timestep(size_t timestepn) {
+    void update_timestep(size_t timestepn) noexcept {
         this->timestep = timestepn;
     }
 
     /// Gets the currently configured steering angle.
-    float get_steering() {
+    [[nodiscard]] float get_steering() const noexcept {
         return this->steering_angle;
     }
 
     /// Gets the currently configured velocity.
-    float get_velocity() {
+    [[nodiscard]] float get_velocity() const noexcept {
         return this->volocity;
     }
 
     /// Gets the currently configured time to collision.
-    float get_ttc() {
+    [[nodiscard]] float get_ttc() const noexcept {
         return this->min_ttc;
     }
 

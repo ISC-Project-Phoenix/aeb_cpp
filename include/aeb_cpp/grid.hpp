@@ -196,7 +196,7 @@ struct Grid {
     ///
     /// - Be aware that this function will use usize*N stack space.
     template<typename Iter1, typename Iter2>
-    bool polygon_collide(Iter1 &&lines_begin, Iter2 &&lines_end) {
+    bool polygon_collide(Iter1 &&lines_begin, Iter2 &&lines_end) noexcept {
         bool collided = false;
 
         // Check for filled cells
@@ -217,7 +217,7 @@ struct Grid {
     ///
     /// - Be aware that this function will use usize*N stack space.
     template<typename Iter1, typename Iter2>
-    void draw_polygon(Iter1 &&lines_begin, Iter2 &&lines_end) {
+    void draw_polygon(Iter1 &&lines_begin, Iter2 &&lines_end) noexcept {
         auto draw = [](Cell &cell, size_t x, size_t y) {
             cell = Cell::Occupied;
         };
@@ -230,7 +230,7 @@ struct Grid {
     }
 
     /// Prints the grid
-    void print() {
+    void print() const noexcept {
         auto m = 10.0f / (float) get_size();
 
         // Print numbers
@@ -275,7 +275,7 @@ struct Grid {
 private:
     /// Basis for raster methods. Cb is a lambda of (&Cell, x, y) -> void called on each cell.
     template<typename Iter1, typename Iter2, typename Cb>
-    void polygon_base(Iter1 &&lines_begin, Iter2 &&lines_end, Cb visitor) {
+    void polygon_base(Iter1 &&lines_begin, Iter2 &&lines_end, Cb visitor) noexcept {
         // Array of the first and last points on each line. Row is index, col is in the reg
         std::array<std::optional<RowReg>, N> ends{};
 

@@ -1,5 +1,10 @@
 #pragma once
 
+/**
+ * Final AEB implementation.
+ * @author Andrew Ealovega
+ */
+
 #include <tuple>
 #include <utility>
 #include "grid.hpp"

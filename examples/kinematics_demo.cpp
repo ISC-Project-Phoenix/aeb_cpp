@@ -5,6 +5,10 @@
 using namespace LineDrawing;
 using namespace std::chrono_literals;
 
+/**
+ * Plays an animation of the predictions created by the kinematics function
+ * @author Andrew Ealovega
+ */
 int main() {
     auto aeb = Aeb<51>{3, 0, 1.08, std::tuple{Pointf{-0.675, 1.43}, Pointf{0.675, -0.59}}, KartPoint{1.43, 0}, 10};
     Grid<51> g{};

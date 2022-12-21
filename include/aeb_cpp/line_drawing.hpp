@@ -2,6 +2,7 @@
 
 /**
  * Contains line drawing algorithms, for use in rasterisation.
+ * @author Andrew Ealovega
  */
 
 #include <iterator>

@@ -2,6 +2,7 @@
 
 /**
  * Deterministic occupancy grid and associated utilities
+ * @author Andrew Ealovega
  */
 
 #include <cstddef>

@@ -16,7 +16,7 @@ private:
     /// The occupancy grid
     Grid<N> grid{};
     /// Current velocity of the kart in m/s
-    float volocity;
+    float velocity;
     /// Current angle of the virtual ackermann wheel, in degrees, positive is right.
     float steering_angle;
     /// The distance between axles, in meters
@@ -52,7 +52,7 @@ public:
     [[nodiscard]] std::tuple<KartPoint, float> predict_pos(const size_t time) const noexcept {
         const auto t = static_cast<float>(time) / 1000.0f;
         const auto phi = dtor(steering_angle);
-        const auto s = volocity;
+        const auto s = velocity;
         const auto l = wheelbase;
         const auto [axel_x, axel_y] = axel_to_range;
 
@@ -114,8 +114,8 @@ public:
 #pragma clang diagnostic pop
 
     /// Updates the current velocity in m/s.
-    void update_velocity(const float velocity) noexcept {
-        this->velocity = volocity;
+    void update_velocity(const float vel) noexcept {
+        this->velocity = vel;
     }
 
     /// Updates the current ackermann steering angle, in degrees.
@@ -152,7 +152,7 @@ public:
 
     /// Gets the currently configured velocity.
     [[nodiscard]] float get_velocity() const noexcept {
-        return this->volocity;
+        return this->velocity;
     }
 
     /// Gets the currently configured time to collision.
@@ -227,7 +227,7 @@ public:
     Aeb(float initial_velocity, float inital_steering, float wheelbase,
         std::tuple<LineDrawing::Pointf, LineDrawing::Pointf> collision_box, const KartPoint &axel_to_range,
         float min_ttc, size_t timestep = 50) noexcept:
-            volocity(initial_velocity),
+            velocity(initial_velocity),
             steering_angle(
                     inital_steering),
             wheelbase(

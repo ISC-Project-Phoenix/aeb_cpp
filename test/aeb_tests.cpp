@@ -15,16 +15,17 @@ TEST(AebTests, PredictionWorks) {
 }
 
 TEST(AebTests, FullAebWroks) {
-    auto aeb = Aeb<411>{3, 0, 1.08, std::tuple{Pointf{-0.675, 1.43}, Pointf{0.675, -0.59}}, KartPoint{1.43, 0}, 10};
+    auto aeb = Aeb<411>{1, 0, 1.08, std::tuple{Pointf{-0.675, 1.43}, Pointf{0.675, -0.59}}, KartPoint{1.43, 0}, 10};
 
     // Single point in front
     {
-        auto points = {KartPoint{1, 0}};
+        auto points = {KartPoint{7, 0}};
         aeb.add_points(points.begin(), points.end());
 
         auto [collides, time] = aeb.collision_check();
 
         EXPECT_TRUE(collides);
+        EXPECT_EQ(time, 7000);
     }
 
     // Points on edge of kart
@@ -35,6 +36,7 @@ TEST(AebTests, FullAebWroks) {
         auto [collides, time] = aeb.collision_check();
 
         EXPECT_TRUE(collides);
+        EXPECT_EQ(time, 7000);
     }
 
 
@@ -46,5 +48,6 @@ TEST(AebTests, FullAebWroks) {
         auto [collides, time] = aeb.collision_check();
 
         EXPECT_FALSE(collides);
+        EXPECT_EQ(time, 0);
     }
 }

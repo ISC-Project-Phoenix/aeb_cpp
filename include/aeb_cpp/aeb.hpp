@@ -184,7 +184,7 @@ public:
     /// Runs the collision checking algorithm with the current parameters.
     /// After this call, the grid will be cleared.
     ///
-    /// Returns true if the vehicle should brake, along with it's collision time in ms.
+    /// Returns true if a collision is predicted to occur under the configured TTC, along with its collision time in ms.
     std::tuple<bool, size_t> collision_check() noexcept {
         // Convert ttc to millis
         auto ttc = static_cast<size_t>(min_ttc * 1000.0f);

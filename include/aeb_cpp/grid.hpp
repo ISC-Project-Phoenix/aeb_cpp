@@ -200,7 +200,7 @@ struct Grid {
         bool collided = false;
 
         // Check for filled cells
-        auto cb = [&collided](Cell &cell, size_t x, size_t y) mutable {
+        auto cb = [&collided](Cell &cell, size_t, size_t) mutable {
             collided |= cell == Cell::Occupied;
         };
 
@@ -218,7 +218,7 @@ struct Grid {
     /// - Be aware that this function will use usize*N stack space.
     template<typename Iter1, typename Iter2>
     void draw_polygon(Iter1 &&lines_begin, Iter2 &&lines_end) noexcept {
-        auto draw = [](Cell &cell, size_t x, size_t y) {
+        auto draw = [](Cell &cell, size_t, size_t) {
             cell = Cell::Occupied;
         };
 
@@ -313,7 +313,7 @@ private:
                 }
 
                 // Bounds check, then visit
-                if (!(p.x < 0 || p.x >= N || p.y < 0 || p.y >= N)) {
+                if (!(p.x < 0 || static_cast<size_t>(p.x) >= N || p.y < 0 || static_cast<size_t>(p.y) >= N)) {
                     visitor(data[x][y], x, y);
                 }
             }

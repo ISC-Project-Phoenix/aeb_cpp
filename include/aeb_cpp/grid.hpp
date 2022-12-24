@@ -260,7 +260,7 @@ struct Grid {
 
             // Add separating lines
             printf("    ");
-            for (int r = 0; r < N; ++r) {
+            for (size_t r = 0; r < N; ++r) {
                 printf("----");
             }
             printf("\n");
